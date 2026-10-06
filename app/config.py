@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     database_url: str = "sqlite+aiosqlite:///./clientflow.db"
     admin_web_username: str = "admin"
     admin_web_password: str = "change_me"
+    telegram_webhook_secret: str | None = None
+    render_external_url: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -44,6 +46,13 @@ class Settings(BaseSettings):
                 parts.fragment,
             )
         )
+
+    @property
+    def webhook_url(self) -> str | None:
+        if not self.render_external_url:
+            return None
+
+        return f"{self.render_external_url.rstrip('/')}/telegram/webhook"
 
 
 settings = Settings()
