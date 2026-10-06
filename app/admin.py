@@ -2,7 +2,8 @@ import secrets
 from typing import Literal
 
 from aiogram import Bot
-from fastapi import Depends, FastAPI, HTTPException, status
+from aiogram.types import Update
+from fastapi import Depends, FastAPI, Header, HTTPException, status
 from fastapi.responses import HTMLResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel
@@ -11,9 +12,10 @@ from sqlalchemy import select
 from .config import settings
 from .database import SessionLocal, init_db
 from .models import Booking
+from .bot import dp
 
 
-app = FastAPI(title="ClientFlow Admin", version="0.3.0")
+app = FastAPI(title="ClientFlow Admin", version="0.5.0")
 security = HTTPBasic()
 bot = Bot(token=settings.bot_token)
 
@@ -48,10 +50,42 @@ def require_admin(
 async def startup() -> None:
     await init_db()
 
+    if settings.webhook_url:
+        await bot.set_webhook(
+            settings.webhook_url,
+            secret_token=settings.telegram_webhook_secret,
+            drop_pending_updates=False,
+        )
+
 
 @app.on_event("shutdown")
 async def shutdown() -> None:
     await bot.session.close()
+
+
+@app.get("/health")
+async def health() -> dict:
+    return {"status": "ok"}
+
+
+@app.post("/telegram/webhook")
+async def telegram_webhook(
+    payload: dict,
+    x_telegram_bot_api_secret_token: str | None = Header(default=None),
+) -> dict:
+    if settings.telegram_webhook_secret:
+        received = x_telegram_bot_api_secret_token or ""
+
+        if not secrets.compare_digest(
+            received,
+            settings.telegram_webhook_secret,
+        ):
+            raise HTTPException(status_code=403, detail="Invalid webhook secret")
+
+    update = Update.model_validate(payload, context={"bot": bot})
+    await dp.feed_update(bot, update)
+
+    return {"ok": True}
 
 
 @app.get("/", response_class=HTMLResponse)
