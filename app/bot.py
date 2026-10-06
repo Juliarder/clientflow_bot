@@ -27,6 +27,16 @@ class BookingForm(StatesGroup):
     preferred_time = State()
 
 
+def main_keyboard() -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="🟢 Новая заявка")],
+        ],
+        resize_keyboard=True,
+        is_persistent=True,
+    )
+
+
 def service_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
@@ -48,8 +58,7 @@ def phone_keyboard() -> ReplyKeyboardMarkup:
     )
 
 
-@dp.message(CommandStart())
-async def start(message: Message, state: FSMContext) -> None:
+async def begin_booking(message: Message, state: FSMContext) -> None:
     await state.clear()
     await state.set_state(BookingForm.service)
 
@@ -57,6 +66,16 @@ async def start(message: Message, state: FSMContext) -> None:
         "Здравствуйте! Я помогу оформить заявку.\n\nВыберите услугу:",
         reply_markup=service_keyboard(),
     )
+
+
+@dp.message(CommandStart())
+async def start(message: Message, state: FSMContext) -> None:
+    await begin_booking(message, state)
+
+
+@dp.message(F.text == "🟢 Новая заявка")
+async def new_booking_button(message: Message, state: FSMContext) -> None:
+    await begin_booking(message, state)
 
 
 @dp.message(BookingForm.service)
@@ -133,7 +152,7 @@ async def enter_time(message: Message, state: FSMContext, bot: Bot) -> None:
     await message.answer(
         f"Готово! Заявка №{booking.id} принята.\n"
         "Администратор свяжется с вами.",
-        reply_markup=ReplyKeyboardRemove(),
+        reply_markup=main_keyboard(),
     )
 
     if settings.admin_telegram_id:
