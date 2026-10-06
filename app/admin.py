@@ -1,6 +1,7 @@
 import secrets
 from typing import Literal
 
+from aiogram import Bot
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.responses import HTMLResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
@@ -12,8 +13,9 @@ from .database import SessionLocal, init_db
 from .models import Booking
 
 
-app = FastAPI(title="ClientFlow Admin", version="0.2.0")
+app = FastAPI(title="ClientFlow Admin", version="0.3.0")
 security = HTTPBasic()
+bot = Bot(token=settings.bot_token)
 
 
 class StatusUpdate(BaseModel):
@@ -45,6 +47,11 @@ def require_admin(
 @app.on_event("startup")
 async def startup() -> None:
     await init_db()
+
+
+@app.on_event("shutdown")
+async def shutdown() -> None:
+    await bot.session.close()
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -92,6 +99,24 @@ async def update_booking_status(
 
         booking.status = payload.status
         await session.commit()
+
+    status_messages = {
+        "new": "Ваша заявка снова отмечена как новая.",
+        "in_progress": "Ваша заявка принята в работу.",
+        "completed": "Ваша заявка отмечена как завершённая.",
+        "cancelled": "Ваша заявка отменена. Если это ошибка, свяжитесь с администратором.",
+    }
+
+    try:
+        await bot.send_message(
+            booking.telegram_user_id,
+            f"ClientFlow\\n\\nЗаявка №{booking.id}: "
+            f"{status_messages[payload.status]}",
+        )
+    except Exception:
+        # Изменение статуса не должно ломаться, даже если пользователь
+        # заблокировал бота или Telegram временно недоступен.
+        pass
 
     return {"id": booking_id, "status": payload.status}
 
