@@ -218,10 +218,19 @@ ADMIN_HTML = """<!doctype html>
   let bookings = [];
   const statusLabels = {new:"Новая",in_progress:"В работе",completed:"Завершена",cancelled:"Отменена"};
 
-  async function loadBookings(){
-    const response=await fetch("/api/bookings");
-    if(!response.ok){alert("Не удалось загрузить заявки");return}
-    bookings=await response.json();updateStats();render();
+  async function loadBookings(silent=false){
+    try{
+      const response=await fetch("/api/bookings",{cache:"no-store"});
+      if(!response.ok){
+        if(!silent) alert("Не удалось загрузить заявки");
+        return;
+      }
+      bookings=await response.json();
+      updateStats();
+      render();
+    }catch(error){
+      if(!silent) alert("Не удалось загрузить заявки");
+    }
   }
 
   function updateStats(){
@@ -275,6 +284,12 @@ ADMIN_HTML = """<!doctype html>
   }
 
   loadBookings();
+
+  setInterval(() => {
+    if (!document.hidden) {
+      loadBookings(true);
+    }
+  }, 3000);
 </script>
 </body>
 </html>
