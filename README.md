@@ -2,7 +2,7 @@
 
 Telegram-бот для приёма заявок, записи клиентов и базового администрирования малого бизнеса.
 
-## MVP v0.1
+## MVP v0.2
 
 Первая версия умеет:
 
@@ -22,8 +22,10 @@ Telegram-бот для приёма заявок, записи клиентов 
 - SQLAlchemy 2
 - SQLite (для MVP)
 - pydantic-settings
+- FastAPI
+- Uvicorn
 
-Позже SQLite будет заменён на PostgreSQL, а к боту будет добавлена веб-админка на FastAPI.
+SQLite используется для локального MVP; следующим инфраструктурным шагом будет PostgreSQL.
 
 ## Быстрый запуск
 
@@ -58,6 +60,8 @@ pip install -r requirements.txt
 BOT_TOKEN=...
 ADMIN_TELEGRAM_ID=...
 DATABASE_URL=sqlite+aiosqlite:///./clientflow.db
+ADMIN_WEB_USERNAME=admin
+ADMIN_WEB_PASSWORD=замени_на_свой_пароль
 ```
 
 6. Запустить бота:
@@ -65,6 +69,15 @@ DATABASE_URL=sqlite+aiosqlite:///./clientflow.db
 ```bash
 python -m app.bot
 ```
+
+7. Во втором терминале запустить веб-админку:
+
+```bash
+python -m uvicorn app.admin:app --reload
+```
+
+После запуска админка доступна по адресу `http://127.0.0.1:8000`.
+Браузер запросит логин и пароль из `.env`.
 
 ## Сценарий клиента
 
@@ -90,8 +103,8 @@ python -m app.bot
 - [x] Сохранение заявок
 - [x] Уведомление администратора
 - [x] Просмотр последних заявок через /admin
-- [ ] Веб-админка
-- [ ] Статусы заявок
+- [x] Веб-админка
+- [x] Статусы заявок
 - [ ] PostgreSQL
 - [ ] Управление услугами
 - [ ] Календарь свободных слотов
