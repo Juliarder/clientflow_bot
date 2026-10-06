@@ -8,7 +8,18 @@ class Base(DeclarativeBase):
     pass
 
 
-engine = create_async_engine(settings.sqlalchemy_database_url, echo=False)
+database_url = settings.sqlalchemy_database_url
+connect_args = {}
+
+if database_url.startswith("postgresql+asyncpg://"):
+    connect_args["ssl"] = "require"
+
+engine = create_async_engine(
+    database_url,
+    echo=False,
+    connect_args=connect_args,
+)
+
 SessionLocal = async_sessionmaker(
     engine,
     class_=AsyncSession,
