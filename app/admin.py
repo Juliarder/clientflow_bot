@@ -110,7 +110,7 @@ async def update_booking_status(
     try:
         await bot.send_message(
             booking.telegram_user_id,
-            f"ClientFlow\\n\\nЗаявка №{booking.id}: "
+            f"ClientFlow\n\nЗаявка №{booking.id}: "
             f"{status_messages[payload.status]}",
         )
     except Exception:
