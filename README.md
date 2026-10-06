@@ -2,7 +2,7 @@
 
 Telegram-бот для приёма заявок, записи клиентов и базового администрирования малого бизнеса.
 
-## MVP v0.4
+## MVP v0.5
 
 Первая версия умеет:
 
@@ -108,7 +108,10 @@ python -m uvicorn app.admin:app --reload
 - [x] Статусы заявок
 - [x] Telegram-уведомления клиента при изменении статуса
 - [x] Поддержка PostgreSQL
-- [ ] Облачная PostgreSQL-база и перенос production-конфигурации
+- [x] Облачная PostgreSQL-база (Neon)
+- [x] Production webhook для Telegram
+- [x] Render Blueprint для облачного деплоя
+- [ ] Публичный production deploy
 - [ ] Управление услугами
 - [ ] Календарь свободных слотов
 - [ ] Аналитика
@@ -130,3 +133,17 @@ DATABASE_URL=postgresql://user:password@host/database
 Внутри приложения она преобразуется в асинхронный SQLAlchemy URL для `asyncpg`.
 
 Локальный SQLite остаётся доступен для разработки и быстрых тестов.
+
+
+### Render deployment
+
+Репозиторий содержит `render.yaml` для развёртывания одного web service.
+
+Production-сервис одновременно:
+
+- отдаёт веб-админку;
+- принимает Telegram webhook;
+- работает с PostgreSQL;
+- предоставляет `/health` для health check.
+
+Render автоматически предоставляет `RENDER_EXTERNAL_URL`, и ClientFlow использует его для регистрации Telegram webhook при старте.
