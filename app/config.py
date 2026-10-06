@@ -1,3 +1,5 @@
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -19,12 +21,29 @@ class Settings(BaseSettings):
         url = self.database_url.strip()
 
         if url.startswith("postgres://"):
-            return "postgresql+asyncpg://" + url[len("postgres://"):]
+            url = "postgresql+asyncpg://" + url[len("postgres://"):]
+        elif url.startswith("postgresql://"):
+            url = "postgresql+asyncpg://" + url[len("postgresql://"):]
 
-        if url.startswith("postgresql://"):
-            return "postgresql+asyncpg://" + url[len("postgresql://"):]
+        if not url.startswith("postgresql+asyncpg://"):
+            return url
 
-        return url
+        parts = urlsplit(url)
+        query = [
+            (key, value)
+            for key, value in parse_qsl(parts.query, keep_blank_values=True)
+            if key not in {"sslmode", "channel_binding"}
+        ]
+
+        return urlunsplit(
+            (
+                parts.scheme,
+                parts.netloc,
+                parts.path,
+                urlencode(query),
+                parts.fragment,
+            )
+        )
 
 
 settings = Settings()
